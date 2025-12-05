@@ -1,0 +1,5 @@
+{
+  "name": "Farebird",
+  "description": "A smart flight management platform that uses AI to find, track, and predict the cheapest flights for your next adventure.",
+  "requestFramePermissions": []
+}
