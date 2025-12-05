@@ -16,6 +16,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const navItems = [
     { name: 'Search Flights', path: '/dashboard', icon: <PlaneTakeoff size={20} /> },
+    { name: 'Flight Status', path: '/status', icon: <PlaneTakeoff size={20} className="rotate-90" /> },
     { name: 'Saved Trips', path: '/saved', icon: <Bookmark size={20} /> },
     { name: 'Settings', path: '/settings', icon: <Settings size={20} /> },
     { name: 'Help', path: '/help', icon: <HelpCircle size={20} /> },

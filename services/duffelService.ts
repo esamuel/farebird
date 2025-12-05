@@ -298,7 +298,7 @@ export const getOrder = async (orderId: string): Promise<DuffelOrder> => {
 export const createPaymentIntent = async (offerId: string): Promise<DuffelPaymentIntent> => {
   // First get the offer to know the amount
   const offer = await getOffer(offerId);
-  
+
   return duffelApiCall<DuffelPaymentIntent>('create_payment_intent', {
     amount: offer.total_amount,
     currency: offer.total_currency,
@@ -375,42 +375,27 @@ export const getOrderCancellationQuote = async (orderId: string): Promise<{
 export const parseDuration = (isoDuration: string): string => {
   const match = isoDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
   if (!match) return isoDuration;
-  
+
   const hours = match[1] ? `${match[1]}h` : '';
   const minutes = match[2] ? `${match[2]}m` : '';
-  
+
   return [hours, minutes].filter(Boolean).join(' ');
 };
 
 /**
  * Convert Duffel offer to our Flight type for display
  */
-export const duffelOfferToFlight = (offer: DuffelOffer): {
-  id: string;
-  airline: string;
-  flightNumber: string;
-  origin: string;
-  destination: string;
-  departureTime: string;
-  arrivalTime: string;
-  price: number;
-  currency: string;
-  duration: string;
-  stops: number;
-  duffelOfferId: string;
-  baggageFees?: {
-    carryOn: number;
-    checkedBag: number;
-  };
-} => {
+import { Flight } from '../types';
+
+export const duffelOfferToFlight = (offer: DuffelOffer): Flight => {
   const firstSlice = offer.slices[0];
   const firstSegment = firstSlice.segments[0];
   const lastSegment = firstSlice.segments[firstSlice.segments.length - 1];
-  
+
   // Calculate baggage fees from available services
   let carryOnFee = 0;
   let checkedBagFee = 0;
-  
+
   for (const service of offer.available_services || []) {
     if (service.type === 'baggage') {
       const amount = parseFloat(service.total_amount);
@@ -435,6 +420,7 @@ export const duffelOfferToFlight = (offer: DuffelOffer): {
     duration: parseDuration(firstSlice.duration),
     stops: firstSlice.segments.length - 1,
     duffelOfferId: offer.id,
+    tags: ['Duffel'],
     baggageFees: {
       carryOn: carryOnFee,
       checkedBag: checkedBagFee,

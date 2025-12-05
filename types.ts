@@ -16,6 +16,7 @@ export interface Flight {
     checkedBag: number;
   };
   duffelOfferId?: string; // If set, this flight comes from Duffel and can be booked for real
+  bookingLink?: string; // Deep link to book the flight (e.g. for Kiwi)
   returnFlight?: {
     airline: string;
     flightNumber: string;

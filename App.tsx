@@ -10,6 +10,7 @@ import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { TermsOfService } from './pages/TermsOfService';
 import { CookiePolicy } from './pages/CookiePolicy';
 import { CompanyDetails } from './pages/CompanyDetails';
+import { FlightStatus } from './pages/FlightStatus';
 
 const App: React.FC = () => {
   return (
@@ -25,6 +26,7 @@ const App: React.FC = () => {
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/cookies" element={<CookiePolicy />} />
           <Route path="/company" element={<CompanyDetails />} />
+          <Route path="/status" element={<FlightStatus />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

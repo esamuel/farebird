@@ -227,42 +227,96 @@ const searchFlightsWithGemini = async (params: SearchParams): Promise<Flight[]> 
   }
 };
 
+import { searchFlights as searchDuffelFlights, duffelOfferToFlight, isDuffelEnabled, mapCabinClass } from './duffelService';
+import { searchFlightsWithKiwi, isKiwiEnabled } from './kiwiService';
+
 // --- Main Exported Function ---
-export const searchFlightsWithAI = async (params: SearchParams): Promise<{ source: 'API' | 'AI', data: Flight[] }> => {
-  // In production, use Netlify serverless function
-  if (isProduction) {
-    try {
-      console.log("Using Netlify serverless function for Amadeus API...");
-      const result = await searchFlightsViaNetlify(params);
+export const searchFlightsWithAI = async (params: SearchParams): Promise<{ source: 'API' | 'AI' | 'MIXED', data: Flight[] }> => {
+  const flightResults: Flight[] = [];
+  const sources: string[] = [];
 
-      // If serverless function returned AI source (credentials not configured), fall back to Gemini
-      if (result.source === 'AI' && result.data.length === 0) {
-        console.log("Serverless function indicated no API config, using Gemini fallback...");
-        const aiData = await searchFlightsWithGemini(params);
-        return { source: 'AI', data: aiData };
+  // 1. Amadeus Search (via Netlify or Direct)
+  const amadeusPromise = (async () => {
+    if (isProduction) {
+      try {
+        const result = await searchFlightsViaNetlify(params);
+        if (result.source === 'API') {
+          return result.data;
+        }
+      } catch (e) { console.warn('Amadeus Netlify search failed', e); }
+    } else {
+      const { id, secret } = getAmadeusCredentials();
+      if (id && secret) {
+        try {
+          return await searchFlightsWithAmadeus(params);
+        } catch (e) { console.warn('Amadeus direct search failed', e); }
       }
-
-      return result;
-    } catch (error) {
-      console.warn("Netlify function failed, switching to AI fallback...", error);
-      const aiData = await searchFlightsWithGemini(params);
-      return { source: 'AI', data: aiData };
     }
+    return [];
+  })();
+
+  // 2. Duffel Search
+  const duffelPromise = (async () => {
+    if (isDuffelEnabled()) {
+      try {
+        const offers = await searchDuffelFlights({
+          slices: [{
+            origin: params.origin,
+            destination: params.destination,
+            departure_date: params.date,
+          }],
+          passengers: Array.from({ length: params.adults || 1 }).map(() => ({ type: 'adult' })),
+          cabin_class: mapCabinClass(params.cabinClass || 'economy'),
+          return_offers: true,
+        });
+        return offers.map(offer => ({
+          ...duffelOfferToFlight(offer),
+          tags: ['Duffel', ...duffelOfferToFlight(offer).tags || []]
+        }));
+      } catch (e) { console.warn('Duffel search failed', e); }
+    }
+    return [];
+  })();
+
+  // 3. Kiwi Search
+  const kiwiPromise = (async () => {
+    if (isKiwiEnabled()) {
+      try {
+        return await searchFlightsWithKiwi(params);
+      } catch (e) { console.warn('Kiwi search failed', e); }
+    }
+    return [];
+  })();
+
+  // Execute all searches in parallel
+  const [amadeusFlights, duffelFlights, kiwiFlights] = await Promise.all([
+    amadeusPromise,
+    duffelPromise,
+    kiwiPromise
+  ]);
+
+  if (amadeusFlights.length > 0) {
+    flightResults.push(...amadeusFlights);
+    sources.push('Amadeus');
+  }
+  if (duffelFlights.length > 0) {
+    flightResults.push(...duffelFlights);
+    sources.push('Duffel');
+  }
+  if (kiwiFlights.length > 0) {
+    flightResults.push(...kiwiFlights);
+    sources.push('Kiwi');
   }
 
-  // In local development, use direct API calls if credentials exist
-  const { id, secret } = getAmadeusCredentials();
-  if (id && secret) {
-    try {
-      console.log("Attempting direct Amadeus API (local dev)...");
-      const realData = await searchFlightsWithAmadeus(params);
-      return { source: 'API', data: realData };
-    } catch (error) {
-      console.warn("Direct API failed, switching to AI fallback...", error);
-    }
+  // If we have real results, return them
+  if (flightResults.length > 0) {
+    // Deduplicate by flight number (simple check)
+    const uniqueFlights = Array.from(new Map(flightResults.map(f => [f.flightNumber + f.departureTime, f])).values());
+    return { source: sources.length > 1 ? 'MIXED' : 'API', data: uniqueFlights };
   }
 
-  // Fallback to AI
+  // Fallback to AI if no real APIs returned data
+  console.log("No API results found, falling back to Gemini AI...");
   const aiData = await searchFlightsWithGemini(params);
   return { source: 'AI', data: aiData };
 };
@@ -355,8 +409,63 @@ export const getVibeDestinations = async (vibe: string, origin: string = 'JFK', 
     const data = JSON.parse(response.text || '[]');
     return data;
   } catch (error) {
-    console.error("Vibe Destinations Error:", error);
-    return [];
+    console.warn("Vibe Destinations Error (using fallback):", error);
+
+    // Mock data fallback
+    const mockDestinations: Record<string, any[]> = {
+      'nightlife': [
+        { city: 'Las Vegas', country: 'USA', airport: 'LAS', vibe: 'nightlife', description: 'The ultimate nightlife destination with world-class clubs and casinos.', estimatedPrice: 250 },
+        { city: 'Berlin', country: 'Germany', airport: 'BER', vibe: 'nightlife', description: 'Famous for its techno scene and legendary clubs like Berghain.', estimatedPrice: 650 },
+        { city: 'Miami', country: 'USA', airport: 'MIA', vibe: 'nightlife', description: 'Vibrant South Beach nightlife with ocean views.', estimatedPrice: 300 },
+        { city: 'Ibiza', country: 'Spain', airport: 'IBZ', vibe: 'nightlife', description: 'The party capital of the world during summer.', estimatedPrice: 800 },
+        { city: 'New Orleans', country: 'USA', airport: 'MSY', vibe: 'nightlife', description: 'Jazz, blues, and the famous Bourbon Street.', estimatedPrice: 350 }
+      ],
+      'hiking': [
+        { city: 'Denver', country: 'USA', airport: 'DEN', vibe: 'hiking', description: 'Gateway to the Rocky Mountains with endless trails.', estimatedPrice: 280 },
+        { city: 'Vancouver', country: 'Canada', airport: 'YVR', vibe: 'hiking', description: 'Stunning mountains meet the ocean.', estimatedPrice: 450 },
+        { city: 'Reykjavik', country: 'Iceland', airport: 'KEF', vibe: 'hiking', description: 'Volcanic landscapes, waterfalls, and glaciers.', estimatedPrice: 600 },
+        { city: 'Cusco', country: 'Peru', airport: 'CUZ', vibe: 'hiking', description: 'Base for the Inca Trail and Machu Picchu.', estimatedPrice: 900 },
+        { city: 'Zurich', country: 'Switzerland', airport: 'ZRH', vibe: 'hiking', description: 'Access to the Swiss Alps and pristine lakes.', estimatedPrice: 750 }
+      ],
+      'romantic': [
+        { city: 'Paris', country: 'France', airport: 'CDG', vibe: 'romantic', description: 'The City of Light is timelessly romantic.', estimatedPrice: 700 },
+        { city: 'Venice', country: 'Italy', airport: 'VCE', vibe: 'romantic', description: 'Gondola rides through historic canals.', estimatedPrice: 800 },
+        { city: 'Santorini', country: 'Greece', airport: 'JTR', vibe: 'romantic', description: 'Stunning sunsets and white-washed architecture.', estimatedPrice: 950 },
+        { city: 'Kyoto', country: 'Japan', airport: 'KIX', vibe: 'romantic', description: 'Peaceful temples and cherry blossoms.', estimatedPrice: 1100 },
+        { city: 'Maui', country: 'USA', airport: 'OGG', vibe: 'romantic', description: 'Tropical paradise with secluded beaches.', estimatedPrice: 600 }
+      ],
+      'beach': [
+        { city: 'Cancun', country: 'Mexico', airport: 'CUN', vibe: 'beach', description: 'White sand beaches and turquoise waters.', estimatedPrice: 350 },
+        { city: 'Honolulu', country: 'USA', airport: 'HNL', vibe: 'beach', description: 'Iconic Waikiki beach and surfing.', estimatedPrice: 550 },
+        { city: 'Bali', country: 'Indonesia', airport: 'DPS', vibe: 'beach', description: 'Tropical beaches, surfing, and culture.', estimatedPrice: 900 },
+        { city: 'Phuket', country: 'Thailand', airport: 'HKT', vibe: 'beach', description: 'Stunning islands and clear waters.', estimatedPrice: 850 },
+        { city: 'Nassau', country: 'Bahamas', airport: 'NAS', vibe: 'beach', description: 'Crystal clear Caribbean waters.', estimatedPrice: 400 }
+      ],
+      'culture': [
+        { city: 'Rome', country: 'Italy', airport: 'FCO', vibe: 'culture', description: 'Ancient history on every corner.', estimatedPrice: 750 },
+        { city: 'Cairo', country: 'Egypt', airport: 'CAI', vibe: 'culture', description: 'Pyramids, museums, and rich history.', estimatedPrice: 800 },
+        { city: 'Istanbul', country: 'Turkey', airport: 'IST', vibe: 'culture', description: 'Where East meets West with stunning architecture.', estimatedPrice: 700 },
+        { city: 'Mexico City', country: 'Mexico', airport: 'MEX', vibe: 'culture', description: 'Museums, art, and incredible food scene.', estimatedPrice: 400 },
+        { city: 'London', country: 'UK', airport: 'LHR', vibe: 'culture', description: 'World-class museums and historic landmarks.', estimatedPrice: 650 }
+      ],
+      'adventure': [
+        { city: 'Queenstown', country: 'New Zealand', airport: 'ZQN', vibe: 'adventure', description: 'Adventure capital of the world.', estimatedPrice: 1200 },
+        { city: 'Cape Town', country: 'South Africa', airport: 'CPT', vibe: 'adventure', description: 'Hiking, shark diving, and surfing.', estimatedPrice: 1000 },
+        { city: 'Costa Rica', country: 'Costa Rica', airport: 'SJO', vibe: 'adventure', description: 'Zip-lining, surfing, and rainforests.', estimatedPrice: 450 },
+        { city: 'Kathmandu', country: 'Nepal', airport: 'KTM', vibe: 'adventure', description: 'Gateway to the Himalayas.', estimatedPrice: 1100 },
+        { city: 'Moab', country: 'USA', airport: 'CNY', vibe: 'adventure', description: 'Red rock landscapes and outdoor sports.', estimatedPrice: 400 }
+      ]
+    };
+
+    // Return mock data for the requested vibe, or a default set
+    let results = mockDestinations[vibe] || mockDestinations['adventure'];
+
+    // Filter by budget if provided
+    if (maxBudget) {
+      results = results.filter(d => d.estimatedPrice <= maxBudget);
+    }
+
+    return results;
   }
 };
 
@@ -400,8 +509,29 @@ export const generatePriceMatrix = async (params: SearchParams): Promise<any[]> 
     const data = JSON.parse(response.text || '[]');
     return data;
   } catch (error) {
-    console.error("Price Matrix Error:", error);
-    return [];
+    console.warn("Price Matrix Error (using fallback):", error);
+
+    // Mock fallback for price matrix
+    const baseDate = new Date(params.date);
+    const mockData = [];
+    const basePrice = 350; // Default base price
+
+    for (let i = -3; i <= 3; i++) {
+      const d = new Date(baseDate);
+      d.setDate(d.getDate() + i);
+      const dateStr = d.toISOString().split('T')[0];
+
+      // Randomize price slightly
+      const variance = Math.floor(Math.random() * 100) - 50;
+      const price = basePrice + variance;
+
+      mockData.push({
+        date: dateStr,
+        price: price > 0 ? price : basePrice
+      });
+    }
+
+    return mockData;
   }
 };
 
@@ -458,8 +588,63 @@ export const getLastMinuteDeals = async (origin: string = 'JFK', maxBudget?: num
     const data = JSON.parse(response.text || '[]');
     return data as LastMinuteDeal[];
   } catch (error) {
-    console.error("Last Minute Deals Error:", error);
-    return [];
+    console.warn("Last Minute Deals Error (using fallback):", error);
+
+    // Mock fallback data
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    return [
+      {
+        id: 'lm-1',
+        origin: origin,
+        destination: 'MIA',
+        destinationCity: 'Miami',
+        airline: 'American Airlines',
+        flightNumber: 'AA1234',
+        departureTime: tomorrow.toISOString(),
+        arrivalTime: new Date(tomorrow.getTime() + 3 * 60 * 60 * 1000).toISOString(),
+        price: 189,
+        originalPrice: 450,
+        discount: 58,
+        duration: '3h 15m',
+        stops: 0,
+        seatsLeft: 3
+      },
+      {
+        id: 'lm-2',
+        origin: origin,
+        destination: 'LHR',
+        destinationCity: 'London',
+        airline: 'British Airways',
+        flightNumber: 'BA178',
+        departureTime: new Date(tomorrow.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+        arrivalTime: new Date(tomorrow.getTime() + 31 * 60 * 60 * 1000).toISOString(),
+        price: 450,
+        originalPrice: 980,
+        discount: 54,
+        duration: '7h 00m',
+        stops: 0,
+        seatsLeft: 5
+      },
+      {
+        id: 'lm-3',
+        origin: origin,
+        destination: 'CUN',
+        destinationCity: 'Cancun',
+        airline: 'JetBlue',
+        flightNumber: 'B6789',
+        departureTime: new Date(tomorrow.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+        arrivalTime: new Date(tomorrow.getTime() + 52 * 60 * 60 * 1000).toISOString(),
+        price: 220,
+        originalPrice: 550,
+        discount: 60,
+        duration: '4h 10m',
+        stops: 0,
+        seatsLeft: 2
+      }
+    ];
   }
 };
 
