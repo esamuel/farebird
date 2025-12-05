@@ -382,6 +382,11 @@ export const parseNaturalLanguageQuery = async (query: string): Promise<SearchPa
 
 // --- Vibe-Based Destination Discovery ---
 export const getVibeDestinations = async (vibe: string, origin: string = 'JFK', maxBudget?: number): Promise<any[]> => {
+  // Check if API key is configured
+  if (!import.meta.env.VITE_API_KEY) {
+    return generateMockVibeDestinations(vibe, maxBudget);
+  }
+
   try {
     const budgetClause = maxBudget ? `with flights under $${maxBudget}` : '';
     const prompt = `
@@ -416,67 +421,18 @@ export const getVibeDestinations = async (vibe: string, origin: string = 'JFK', 
     return data;
   } catch (error) {
     console.warn("Vibe Destinations Error (using fallback):", error);
-
-    // Mock data fallback
-    const mockDestinations: Record<string, any[]> = {
-      'nightlife': [
-        { city: 'Las Vegas', country: 'USA', airport: 'LAS', vibe: 'nightlife', description: 'The ultimate nightlife destination with world-class clubs and casinos.', estimatedPrice: 250 },
-        { city: 'Berlin', country: 'Germany', airport: 'BER', vibe: 'nightlife', description: 'Famous for its techno scene and legendary clubs like Berghain.', estimatedPrice: 650 },
-        { city: 'Miami', country: 'USA', airport: 'MIA', vibe: 'nightlife', description: 'Vibrant South Beach nightlife with ocean views.', estimatedPrice: 300 },
-        { city: 'Ibiza', country: 'Spain', airport: 'IBZ', vibe: 'nightlife', description: 'The party capital of the world during summer.', estimatedPrice: 800 },
-        { city: 'New Orleans', country: 'USA', airport: 'MSY', vibe: 'nightlife', description: 'Jazz, blues, and the famous Bourbon Street.', estimatedPrice: 350 }
-      ],
-      'hiking': [
-        { city: 'Denver', country: 'USA', airport: 'DEN', vibe: 'hiking', description: 'Gateway to the Rocky Mountains with endless trails.', estimatedPrice: 280 },
-        { city: 'Vancouver', country: 'Canada', airport: 'YVR', vibe: 'hiking', description: 'Stunning mountains meet the ocean.', estimatedPrice: 450 },
-        { city: 'Reykjavik', country: 'Iceland', airport: 'KEF', vibe: 'hiking', description: 'Volcanic landscapes, waterfalls, and glaciers.', estimatedPrice: 600 },
-        { city: 'Cusco', country: 'Peru', airport: 'CUZ', vibe: 'hiking', description: 'Base for the Inca Trail and Machu Picchu.', estimatedPrice: 900 },
-        { city: 'Zurich', country: 'Switzerland', airport: 'ZRH', vibe: 'hiking', description: 'Access to the Swiss Alps and pristine lakes.', estimatedPrice: 750 }
-      ],
-      'romantic': [
-        { city: 'Paris', country: 'France', airport: 'CDG', vibe: 'romantic', description: 'The City of Light is timelessly romantic.', estimatedPrice: 700 },
-        { city: 'Venice', country: 'Italy', airport: 'VCE', vibe: 'romantic', description: 'Gondola rides through historic canals.', estimatedPrice: 800 },
-        { city: 'Santorini', country: 'Greece', airport: 'JTR', vibe: 'romantic', description: 'Stunning sunsets and white-washed architecture.', estimatedPrice: 950 },
-        { city: 'Kyoto', country: 'Japan', airport: 'KIX', vibe: 'romantic', description: 'Peaceful temples and cherry blossoms.', estimatedPrice: 1100 },
-        { city: 'Maui', country: 'USA', airport: 'OGG', vibe: 'romantic', description: 'Tropical paradise with secluded beaches.', estimatedPrice: 600 }
-      ],
-      'beach': [
-        { city: 'Cancun', country: 'Mexico', airport: 'CUN', vibe: 'beach', description: 'White sand beaches and turquoise waters.', estimatedPrice: 350 },
-        { city: 'Honolulu', country: 'USA', airport: 'HNL', vibe: 'beach', description: 'Iconic Waikiki beach and surfing.', estimatedPrice: 550 },
-        { city: 'Bali', country: 'Indonesia', airport: 'DPS', vibe: 'beach', description: 'Tropical beaches, surfing, and culture.', estimatedPrice: 900 },
-        { city: 'Phuket', country: 'Thailand', airport: 'HKT', vibe: 'beach', description: 'Stunning islands and clear waters.', estimatedPrice: 850 },
-        { city: 'Nassau', country: 'Bahamas', airport: 'NAS', vibe: 'beach', description: 'Crystal clear Caribbean waters.', estimatedPrice: 400 }
-      ],
-      'culture': [
-        { city: 'Rome', country: 'Italy', airport: 'FCO', vibe: 'culture', description: 'Ancient history on every corner.', estimatedPrice: 750 },
-        { city: 'Cairo', country: 'Egypt', airport: 'CAI', vibe: 'culture', description: 'Pyramids, museums, and rich history.', estimatedPrice: 800 },
-        { city: 'Istanbul', country: 'Turkey', airport: 'IST', vibe: 'culture', description: 'Where East meets West with stunning architecture.', estimatedPrice: 700 },
-        { city: 'Mexico City', country: 'Mexico', airport: 'MEX', vibe: 'culture', description: 'Museums, art, and incredible food scene.', estimatedPrice: 400 },
-        { city: 'London', country: 'UK', airport: 'LHR', vibe: 'culture', description: 'World-class museums and historic landmarks.', estimatedPrice: 650 }
-      ],
-      'adventure': [
-        { city: 'Queenstown', country: 'New Zealand', airport: 'ZQN', vibe: 'adventure', description: 'Adventure capital of the world.', estimatedPrice: 1200 },
-        { city: 'Cape Town', country: 'South Africa', airport: 'CPT', vibe: 'adventure', description: 'Hiking, shark diving, and surfing.', estimatedPrice: 1000 },
-        { city: 'Costa Rica', country: 'Costa Rica', airport: 'SJO', vibe: 'adventure', description: 'Zip-lining, surfing, and rainforests.', estimatedPrice: 450 },
-        { city: 'Kathmandu', country: 'Nepal', airport: 'KTM', vibe: 'adventure', description: 'Gateway to the Himalayas.', estimatedPrice: 1100 },
-        { city: 'Moab', country: 'USA', airport: 'CNY', vibe: 'adventure', description: 'Red rock landscapes and outdoor sports.', estimatedPrice: 400 }
-      ]
-    };
-
-    // Return mock data for the requested vibe, or a default set
-    let results = mockDestinations[vibe] || mockDestinations['adventure'];
-
-    // Filter by budget if provided
-    if (maxBudget) {
-      results = results.filter(d => d.estimatedPrice <= maxBudget);
-    }
-
-    return results;
+    return generateMockVibeDestinations(vibe, maxBudget);
   }
 };
 
 // --- Price Matrix Generator (Flexible Dates) ---
 export const generatePriceMatrix = async (params: SearchParams): Promise<any[]> => {
+  // Check if API key is configured
+  if (!import.meta.env.VITE_API_KEY) {
+    // Fallback immediately to mock data logic
+    return generateMockPriceMatrix(params);
+  }
+
   try {
     const baseDate = new Date(params.date);
     const dates: string[] = [];
@@ -516,33 +472,17 @@ export const generatePriceMatrix = async (params: SearchParams): Promise<any[]> 
     return data;
   } catch (error) {
     console.warn("Price Matrix Error (using fallback):", error);
-
-    // Mock fallback for price matrix
-    const baseDate = new Date(params.date);
-    const mockData = [];
-    const basePrice = 350; // Default base price
-
-    for (let i = -3; i <= 3; i++) {
-      const d = new Date(baseDate);
-      d.setDate(d.getDate() + i);
-      const dateStr = d.toISOString().split('T')[0];
-
-      // Randomize price slightly
-      const variance = Math.floor(Math.random() * 100) - 50;
-      const price = basePrice + variance;
-
-      mockData.push({
-        date: dateStr,
-        price: price > 0 ? price : basePrice
-      });
-    }
-
-    return mockData;
+    return generateMockPriceMatrix(params);
   }
 };
 
 // --- Last Minute Deals ---
 export const getLastMinuteDeals = async (origin: string = 'JFK', maxBudget?: number): Promise<LastMinuteDeal[]> => {
+  // Check if API key is configured
+  if (!import.meta.env.VITE_API_KEY) {
+    return generateMockLastMinuteDeals(origin);
+  }
+
   try {
     const today = new Date();
     const nextWeek = new Date(today);
@@ -595,62 +535,7 @@ export const getLastMinuteDeals = async (origin: string = 'JFK', maxBudget?: num
     return data as LastMinuteDeal[];
   } catch (error) {
     console.warn("Last Minute Deals Error (using fallback):", error);
-
-    // Mock fallback data
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    return [
-      {
-        id: 'lm-1',
-        origin: origin,
-        destination: 'MIA',
-        destinationCity: 'Miami',
-        airline: 'American Airlines',
-        flightNumber: 'AA1234',
-        departureTime: tomorrow.toISOString(),
-        arrivalTime: new Date(tomorrow.getTime() + 3 * 60 * 60 * 1000).toISOString(),
-        price: 189,
-        originalPrice: 450,
-        discount: 58,
-        duration: '3h 15m',
-        stops: 0,
-        seatsLeft: 3
-      },
-      {
-        id: 'lm-2',
-        origin: origin,
-        destination: 'LHR',
-        destinationCity: 'London',
-        airline: 'British Airways',
-        flightNumber: 'BA178',
-        departureTime: new Date(tomorrow.getTime() + 24 * 60 * 60 * 1000).toISOString(),
-        arrivalTime: new Date(tomorrow.getTime() + 31 * 60 * 60 * 1000).toISOString(),
-        price: 450,
-        originalPrice: 980,
-        discount: 54,
-        duration: '7h 00m',
-        stops: 0,
-        seatsLeft: 5
-      },
-      {
-        id: 'lm-3',
-        origin: origin,
-        destination: 'CUN',
-        destinationCity: 'Cancun',
-        airline: 'JetBlue',
-        flightNumber: 'B6789',
-        departureTime: new Date(tomorrow.getTime() + 48 * 60 * 60 * 1000).toISOString(),
-        arrivalTime: new Date(tomorrow.getTime() + 52 * 60 * 60 * 1000).toISOString(),
-        price: 220,
-        originalPrice: 550,
-        discount: 60,
-        duration: '4h 10m',
-        stops: 0,
-        seatsLeft: 2
-      }
-    ];
+    return generateMockLastMinuteDeals(origin);
   }
 };
 
@@ -676,6 +561,11 @@ export interface MistakeFare {
  * In production, this would connect to fare monitoring services
  */
 export const getMistakeFares = async (): Promise<MistakeFare[]> => {
+  // Check if API key is configured
+  if (!import.meta.env.VITE_API_KEY) {
+    return generateMockMistakeFares();
+  }
+
   try {
     const prompt = `Generate 3-5 realistic "mistake fare" flight deals. These are pricing errors by airlines that offer 50-90% discounts.
 
@@ -727,53 +617,195 @@ Return ONLY the JSON array, no markdown.`;
     return data as MistakeFare[];
   } catch (error) {
     console.error("Mistake Fares Error:", error);
-    // Return sample data as fallback
-    return [
-      {
-        id: 'mf-1',
-        origin: 'JFK',
-        originCity: 'New York',
-        destination: 'LHR',
-        destinationCity: 'London',
-        normalPrice: 890,
-        mistakePrice: 198,
-        discount: 78,
-        airline: 'British Airways',
-        departureDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        expiresIn: '2 hours',
-        isVerified: true,
-        bookingClass: 'Economy'
-      },
-      {
-        id: 'mf-2',
-        origin: 'LAX',
-        originCity: 'Los Angeles',
-        destination: 'NRT',
-        destinationCity: 'Tokyo',
-        normalPrice: 1450,
-        mistakePrice: 347,
-        discount: 76,
-        airline: 'ANA',
-        departureDate: new Date(Date.now() + 35 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        expiresIn: '45 minutes',
-        isVerified: true,
-        bookingClass: 'Economy'
-      },
-      {
-        id: 'mf-3',
-        origin: 'ORD',
-        originCity: 'Chicago',
-        destination: 'BCN',
-        destinationCity: 'Barcelona',
-        normalPrice: 2800,
-        mistakePrice: 890,
-        discount: 68,
-        airline: 'Iberia',
-        departureDate: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        expiresIn: '1 hour',
-        isVerified: false,
-        bookingClass: 'Business'
-      }
-    ];
+    return generateMockMistakeFares();
   }
+};
+
+// --- Mock Data Generators ---
+
+const generateMockVibeDestinations = (vibe: string, maxBudget?: number): any[] => {
+  const mockDestinations: Record<string, any[]> = {
+    'nightlife': [
+      { city: 'Las Vegas', country: 'USA', airport: 'LAS', vibe: 'nightlife', description: 'The ultimate nightlife destination with world-class clubs and casinos.', estimatedPrice: 250 },
+      { city: 'Berlin', country: 'Germany', airport: 'BER', vibe: 'nightlife', description: 'Famous for its techno scene and legendary clubs like Berghain.', estimatedPrice: 650 },
+      { city: 'Miami', country: 'USA', airport: 'MIA', vibe: 'nightlife', description: 'Vibrant South Beach nightlife with ocean views.', estimatedPrice: 300 },
+      { city: 'Ibiza', country: 'Spain', airport: 'IBZ', vibe: 'nightlife', description: 'The party capital of the world during summer.', estimatedPrice: 800 },
+      { city: 'New Orleans', country: 'USA', airport: 'MSY', vibe: 'nightlife', description: 'Jazz, blues, and the famous Bourbon Street.', estimatedPrice: 350 }
+    ],
+    'hiking': [
+      { city: 'Denver', country: 'USA', airport: 'DEN', vibe: 'hiking', description: 'Gateway to the Rocky Mountains with endless trails.', estimatedPrice: 280 },
+      { city: 'Vancouver', country: 'Canada', airport: 'YVR', vibe: 'hiking', description: 'Stunning mountains meet the ocean.', estimatedPrice: 450 },
+      { city: 'Reykjavik', country: 'Iceland', airport: 'KEF', vibe: 'hiking', description: 'Volcanic landscapes, waterfalls, and glaciers.', estimatedPrice: 600 },
+      { city: 'Cusco', country: 'Peru', airport: 'CUZ', vibe: 'hiking', description: 'Base for the Inca Trail and Machu Picchu.', estimatedPrice: 900 },
+      { city: 'Zurich', country: 'Switzerland', airport: 'ZRH', vibe: 'hiking', description: 'Access to the Swiss Alps and pristine lakes.', estimatedPrice: 750 }
+    ],
+    'romantic': [
+      { city: 'Paris', country: 'France', airport: 'CDG', vibe: 'romantic', description: 'The City of Light is timelessly romantic.', estimatedPrice: 700 },
+      { city: 'Venice', country: 'Italy', airport: 'VCE', vibe: 'romantic', description: 'Gondola rides through historic canals.', estimatedPrice: 800 },
+      { city: 'Santorini', country: 'Greece', airport: 'JTR', vibe: 'romantic', description: 'Stunning sunsets and white-washed architecture.', estimatedPrice: 950 },
+      { city: 'Kyoto', country: 'Japan', airport: 'KIX', vibe: 'romantic', description: 'Peaceful temples and cherry blossoms.', estimatedPrice: 1100 },
+      { city: 'Maui', country: 'USA', airport: 'OGG', vibe: 'romantic', description: 'Tropical paradise with secluded beaches.', estimatedPrice: 600 }
+    ],
+    'beach': [
+      { city: 'Cancun', country: 'Mexico', airport: 'CUN', vibe: 'beach', description: 'White sand beaches and turquoise waters.', estimatedPrice: 350 },
+      { city: 'Honolulu', country: 'USA', airport: 'HNL', vibe: 'beach', description: 'Iconic Waikiki beach and surfing.', estimatedPrice: 550 },
+      { city: 'Bali', country: 'Indonesia', airport: 'DPS', vibe: 'beach', description: 'Tropical beaches, surfing, and culture.', estimatedPrice: 900 },
+      { city: 'Phuket', country: 'Thailand', airport: 'HKT', vibe: 'beach', description: 'Stunning islands and clear waters.', estimatedPrice: 850 },
+      { city: 'Nassau', country: 'Bahamas', airport: 'NAS', vibe: 'beach', description: 'Crystal clear Caribbean waters.', estimatedPrice: 400 }
+    ],
+    'culture': [
+      { city: 'Rome', country: 'Italy', airport: 'FCO', vibe: 'culture', description: 'Ancient history on every corner.', estimatedPrice: 750 },
+      { city: 'Cairo', country: 'Egypt', airport: 'CAI', vibe: 'culture', description: 'Pyramids, museums, and rich history.', estimatedPrice: 800 },
+      { city: 'Istanbul', country: 'Turkey', airport: 'IST', vibe: 'culture', description: 'Where East meets West with stunning architecture.', estimatedPrice: 700 },
+      { city: 'Mexico City', country: 'Mexico', airport: 'MEX', vibe: 'culture', description: 'Museums, art, and incredible food scene.', estimatedPrice: 400 },
+      { city: 'London', country: 'UK', airport: 'LHR', vibe: 'culture', description: 'World-class museums and historic landmarks.', estimatedPrice: 650 }
+    ],
+    'adventure': [
+      { city: 'Queenstown', country: 'New Zealand', airport: 'ZQN', vibe: 'adventure', description: 'Adventure capital of the world.', estimatedPrice: 1200 },
+      { city: 'Cape Town', country: 'South Africa', airport: 'CPT', vibe: 'adventure', description: 'Hiking, shark diving, and surfing.', estimatedPrice: 1000 },
+      { city: 'Costa Rica', country: 'Costa Rica', airport: 'SJO', vibe: 'adventure', description: 'Zip-lining, surfing, and rainforests.', estimatedPrice: 450 },
+      { city: 'Kathmandu', country: 'Nepal', airport: 'KTM', vibe: 'adventure', description: 'Gateway to the Himalayas.', estimatedPrice: 1100 },
+      { city: 'Moab', country: 'USA', airport: 'CNY', vibe: 'adventure', description: 'Red rock landscapes and outdoor sports.', estimatedPrice: 400 }
+    ]
+  };
+
+  // Return mock data for the requested vibe, or a default set
+  let results = mockDestinations[vibe] || mockDestinations['adventure'];
+
+  // Filter by budget if provided
+  if (maxBudget) {
+    results = results.filter(d => d.estimatedPrice <= maxBudget);
+  }
+
+  return results;
+};
+
+const generateMockPriceMatrix = (params: SearchParams): any[] => {
+  const baseDate = new Date(params.date);
+  const mockData = [];
+  const basePrice = 350; // Default base price
+
+  for (let i = -3; i <= 3; i++) {
+    const d = new Date(baseDate);
+    d.setDate(d.getDate() + i);
+    const dateStr = d.toISOString().split('T')[0];
+
+    // Randomize price slightly
+    const variance = Math.floor(Math.random() * 100) - 50;
+    const price = basePrice + variance;
+
+    mockData.push({
+      date: dateStr,
+      price: price > 0 ? price : basePrice
+    });
+  }
+
+  return mockData;
+};
+
+const generateMockLastMinuteDeals = (origin: string): LastMinuteDeal[] => {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  return [
+    {
+      id: 'lm-1',
+      origin: origin,
+      destination: 'MIA',
+      destinationCity: 'Miami',
+      airline: 'American Airlines',
+      flightNumber: 'AA1234',
+      departureTime: tomorrow.toISOString(),
+      arrivalTime: new Date(tomorrow.getTime() + 3 * 60 * 60 * 1000).toISOString(),
+      price: 189,
+      originalPrice: 450,
+      discount: 58,
+      duration: '3h 15m',
+      stops: 0,
+      seatsLeft: 3
+    },
+    {
+      id: 'lm-2',
+      origin: origin,
+      destination: 'LHR',
+      destinationCity: 'London',
+      airline: 'British Airways',
+      flightNumber: 'BA178',
+      departureTime: new Date(tomorrow.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+      arrivalTime: new Date(tomorrow.getTime() + 31 * 60 * 60 * 1000).toISOString(),
+      price: 450,
+      originalPrice: 980,
+      discount: 54,
+      duration: '7h 00m',
+      stops: 0,
+      seatsLeft: 5
+    },
+    {
+      id: 'lm-3',
+      origin: origin,
+      destination: 'CUN',
+      destinationCity: 'Cancun',
+      airline: 'JetBlue',
+      flightNumber: 'B6789',
+      departureTime: new Date(tomorrow.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+      arrivalTime: new Date(tomorrow.getTime() + 52 * 60 * 60 * 1000).toISOString(),
+      price: 220,
+      originalPrice: 550,
+      discount: 60,
+      duration: '4h 10m',
+      stops: 0,
+      seatsLeft: 2
+    }
+  ];
+};
+
+const generateMockMistakeFares = (): MistakeFare[] => {
+  return [
+    {
+      id: 'mf-1',
+      origin: 'JFK',
+      originCity: 'New York',
+      destination: 'LHR',
+      destinationCity: 'London',
+      normalPrice: 890,
+      mistakePrice: 198,
+      discount: 78,
+      airline: 'British Airways',
+      departureDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      expiresIn: '2 hours',
+      isVerified: true,
+      bookingClass: 'Economy'
+    },
+    {
+      id: 'mf-2',
+      origin: 'LAX',
+      originCity: 'Los Angeles',
+      destination: 'NRT',
+      destinationCity: 'Tokyo',
+      normalPrice: 1450,
+      mistakePrice: 347,
+      discount: 76,
+      airline: 'ANA',
+      departureDate: new Date(Date.now() + 35 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      expiresIn: '45 minutes',
+      isVerified: true,
+      bookingClass: 'Economy'
+    },
+    {
+      id: 'mf-3',
+      origin: 'ORD',
+      originCity: 'Chicago',
+      destination: 'BCN',
+      destinationCity: 'Barcelona',
+      normalPrice: 2800,
+      mistakePrice: 890,
+      discount: 68,
+      airline: 'Iberia',
+      departureDate: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      expiresIn: '1 hour',
+      isVerified: false,
+      bookingClass: 'Business'
+    }
+  ];
 };

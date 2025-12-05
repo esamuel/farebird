@@ -183,7 +183,7 @@ export interface DuffelPaymentIntent {
 const getApiKey = (): string => {
   const key = import.meta.env.VITE_DUFFEL_API_KEY;
   if (!key) {
-    console.warn('VITE_DUFFEL_API_KEY not set - Duffel integration disabled');
+    // Key is optional, so we don't need to warn every time
     return '';
   }
   return key;
