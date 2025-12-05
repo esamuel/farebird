@@ -10,7 +10,7 @@ interface LayoutProps {
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
-  
+
   // Hide layout for landing page usually, but for this demo we keep a consistent header logic
   const isLanding = location.pathname === '/';
 
@@ -24,12 +24,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   if (isLanding) {
     return (
       <div className="min-h-screen flex flex-col">
-         {/* Simple Landing Header */}
+        {/* Simple Landing Header */}
         <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <img src="/farebird-icon.svg" alt="Farebird" className="h-8 w-8" />
-              <span className="text-xl font-bold text-slate-900 tracking-tight">farebird</span>
+            <div className="flex items-center">
+              <img src="/farebird-logo-full.jpg" alt="Farebird" className="h-12 w-auto" />
             </div>
             <div className="flex gap-4">
               <NavLink to="/dashboard" className="text-sm font-medium text-slate-600 hover:text-blue-700 transition-colors">
@@ -52,10 +51,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Sidebar Desktop */}
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-slate-200 fixed h-full z-10">
         <div className="h-16 flex items-center px-6 border-b border-slate-100">
-           <NavLink to="/" className="flex items-center gap-2">
-              <img src="/farebird-icon.svg" alt="Farebird" className="h-8 w-8" />
-              <span className="text-xl font-bold text-slate-900 tracking-tight">farebird</span>
-           </NavLink>
+          <NavLink to="/" className="flex items-center">
+            <img src="/farebird-logo-full.jpg" alt="Farebird" className="h-12 w-auto" />
+          </NavLink>
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
@@ -64,10 +62,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive
-                    ? 'bg-sky-50 text-sky-700 shadow-sm ring-1 ring-sky-200'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
+                  ? 'bg-sky-50 text-sky-700 shadow-sm ring-1 ring-sky-200'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`
               }
             >
@@ -95,9 +92,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Mobile Header & Content Wrapper */}
       <div className="flex-1 flex flex-col lg:ml-64 min-w-0">
         <header className="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sticky top-0 z-20">
-          <div className="flex items-center gap-2">
-            <img src="/farebird-icon.svg" alt="Farebird" className="h-8 w-8" />
-            <span className="text-xl font-bold text-slate-900">farebird</span>
+          <div className="flex items-center">
+            <img src="/farebird-logo-full.jpg" alt="Farebird" className="h-10 w-auto" />
           </div>
           <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-slate-600">
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -108,14 +104,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         {isMobileMenuOpen && (
           <div className="lg:hidden fixed inset-0 z-10 bg-slate-800/50 backdrop-blur-sm pt-16" onClick={() => setIsMobileMenuOpen(false)}>
             <div className="bg-white p-4 space-y-2 border-b border-slate-200 shadow-xl" onClick={e => e.stopPropagation()}>
-               {navItems.map((item) => (
+              {navItems.map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium ${
-                      isActive ? 'bg-sky-50 text-sky-700' : 'text-slate-600'
+                    `flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium ${isActive ? 'bg-sky-50 text-sky-700' : 'text-slate-600'
                     }`
                   }
                 >

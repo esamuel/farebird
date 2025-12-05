@@ -25,7 +25,7 @@ import { searchFlights as searchDuffelFlights, duffelOfferToFlight, isDuffelEnab
 
 export const Dashboard: React.FC = () => {
   const [params, setParams] = useState<SearchParams>({
-    origin: 'JFK',
+    origin: localStorage.getItem('farebird_home_airport') || 'JFK',
     destination: 'LHR',
     date: new Date().toISOString().split('T')[0],
     returnDate: '',
