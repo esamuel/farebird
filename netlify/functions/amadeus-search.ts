@@ -132,6 +132,31 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       const carrierCode = firstSegment.carrierCode;
       const airlineName = data.dictionaries?.carriers?.[carrierCode] || carrierCode;
 
+      let returnFlight = undefined;
+      if (offer.itineraries.length > 1) {
+        const returnItinerary = offer.itineraries[1];
+        const returnFirstSegment = returnItinerary.segments[0];
+        const returnLastSegment = returnItinerary.segments[returnItinerary.segments.length - 1];
+
+        const returnDuration = returnItinerary.duration
+          .replace("PT", "")
+          .replace("H", "h ")
+          .replace("M", "m")
+          .toLowerCase();
+
+        const returnCarrierCode = returnFirstSegment.carrierCode;
+        const returnAirlineName = data.dictionaries?.carriers?.[returnCarrierCode] || returnCarrierCode;
+
+        returnFlight = {
+          airline: returnAirlineName,
+          flightNumber: `${returnCarrierCode}${returnFirstSegment.number}`,
+          departureTime: returnFirstSegment.departure.at,
+          arrivalTime: returnLastSegment.arrival.at,
+          duration: returnDuration.trim(),
+          stops: returnItinerary.segments.length - 1,
+        };
+      }
+
       return {
         id: offer.id,
         airline: airlineName,
@@ -149,6 +174,7 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
           carryOn: 0, // Amadeus doesn't always provide this
           checkedBag: 35, // Default estimate
         },
+        returnFlight: returnFlight,
       };
     });
 
