@@ -28,7 +28,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div className="flex items-center">
-              <img src="/farebird-logo-full.jpg" alt="Farebird" className="h-12 w-auto" />
+              <img src="/farebird-logo-full.jpg" alt="Farebird" className="h-16 w-auto" />
             </div>
             <div className="flex gap-4">
               <NavLink to="/dashboard" className="text-sm font-medium text-slate-600 hover:text-blue-700 transition-colors">
@@ -52,7 +52,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-slate-200 fixed h-full z-10">
         <div className="h-16 flex items-center px-6 border-b border-slate-100">
           <NavLink to="/" className="flex items-center">
-            <img src="/farebird-logo-full.jpg" alt="Farebird" className="h-12 w-auto" />
+            <img src="/farebird-logo-full.jpg" alt="Farebird" className="h-16 w-auto" />
           </NavLink>
         </div>
 
@@ -93,7 +93,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <div className="flex-1 flex flex-col lg:ml-64 min-w-0">
         <header className="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sticky top-0 z-20">
           <div className="flex items-center">
-            <img src="/farebird-logo-full.jpg" alt="Farebird" className="h-10 w-auto" />
+            <img src="/farebird-logo-full.jpg" alt="Farebird" className="h-12 w-auto" />
           </div>
           <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-slate-600">
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}

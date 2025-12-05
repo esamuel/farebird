@@ -716,7 +716,9 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   <h3 className="font-semibold text-slate-900 mb-3">Order Summary</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Flight ({flight.origin} → {flight.destination})</span>
+                      <span className="text-slate-600">
+                        {flight.returnFlight ? 'Round-trip' : 'Flight'} ({flight.origin} {flight.returnFlight ? '⇄' : '→'} {flight.destination})
+                      </span>
                       <span>${flight.price.toFixed(2)}</span>
                     </div>
                     {Array.from(selectedServices.entries()).map(([serviceId, qty]) => {
