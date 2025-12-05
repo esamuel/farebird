@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  X, 
-  Plane, 
-  User, 
-  CreditCard, 
-  CheckCircle, 
+import {
+  X,
+  Plane,
+  User,
+  CreditCard,
+  CheckCircle,
   AlertCircle,
   ArrowRight,
   Clock,
@@ -14,9 +14,9 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Flight } from '../types';
-import { 
-  DuffelOffer, 
-  DuffelPassenger, 
+import {
+  DuffelOffer,
+  DuffelPassenger,
   DuffelService,
   isDuffelEnabled,
   getOffer,
@@ -24,8 +24,8 @@ import {
   duffelOfferToFlight,
   parseDuration
 } from '../services/duffelService';
-import { 
-  isPayPalEnabled, 
+import {
+  isPayPalEnabled,
   renderPayPalButtons,
   PayPalOrderDetails
 } from '../services/paypalService';
@@ -69,7 +69,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bookingReference, setBookingReference] = useState<string | null>(null);
-  
+
   // Passenger form state
   const [passengers, setPassengers] = useState<PassengerForm[]>([{
     given_name: '',
@@ -80,10 +80,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     gender: '',
     title: '',
   }]);
-  
+
   // Selected extras
   const [selectedServices, setSelectedServices] = useState<Map<string, number>>(new Map());
-  
+
   // Payment method
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal'>('card');
 
@@ -108,17 +108,17 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       });
 
       return () => {
-        cleanup.then(fn => fn()).catch(() => {});
+        cleanup.then(fn => fn()).catch(() => { });
       };
     }
   }, [step, paymentMethod]);
 
   const loadOffer = async () => {
     if (!flight.duffelOfferId) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const offerData = await getOffer(flight.duffelOfferId);
       setOffer(offerData);
@@ -131,7 +131,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
   const calculateTotal = (): number => {
     let total = flight.price;
-    
+
     // Add selected services
     if (offer) {
       for (const [serviceId, quantity] of selectedServices) {
@@ -141,7 +141,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         }
       }
     }
-    
+
     return total;
   };
 
@@ -169,13 +169,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const handlePayPalApprove = async (orderId: string, _payerInfo: PayPalOrderDetails['payer']) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       // In a real implementation, you would:
       // 1. Verify the PayPal payment on your backend
       // 2. Create the Duffel order with the payment confirmation
       // For now, we'll simulate the booking
-      
+
       if (isDuffelEnabled() && flight.duffelOfferId) {
         const duffelPassengers: DuffelPassenger[] = passengers.map((p, idx) => ({
           id: `passenger_${idx}`,
@@ -208,7 +208,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         // Fallback for non-Duffel bookings
         setBookingReference(`FB${Date.now().toString(36).toUpperCase()}`);
       }
-      
+
       setStep('confirmation');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Booking failed');
@@ -219,10 +219,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
   const handleCardPayment = async () => {
     if (!validatePassengers()) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       if (isDuffelEnabled() && flight.duffelOfferId) {
         const duffelPassengers: DuffelPassenger[] = passengers.map((p, idx) => ({
@@ -267,7 +267,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
   const nextStep = () => {
     setError(null);
-    
+
     if (step === 'details') {
       setStep('passengers');
     } else if (step === 'passengers') {
@@ -281,7 +281,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
   const prevStep = () => {
     setError(null);
-    
+
     if (step === 'passengers') {
       setStep('details');
     } else if (step === 'extras') {
@@ -296,9 +296,9 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   };
 
   const formatDate = (isoString: string) => {
-    return new Date(isoString).toLocaleDateString([], { 
-      weekday: 'short', 
-      month: 'short', 
+    return new Date(isoString).toLocaleDateString([], {
+      weekday: 'short',
+      month: 'short',
       day: 'numeric',
       year: 'numeric'
     });
@@ -309,11 +309,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
-      <div 
+      <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
-      
+
       {/* Modal */}
       <div className="relative min-h-screen flex items-center justify-center p-4">
         <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
@@ -321,7 +321,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
           <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between z-10">
             <div className="flex items-center gap-3">
               {step !== 'details' && step !== 'confirmation' && (
-                <button 
+                <button
                   onClick={prevStep}
                   className="p-1 hover:bg-slate-100 rounded-full transition-colors"
                 >
@@ -336,7 +336,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 {step === 'confirmation' && 'Booking Confirmed!'}
               </h2>
             </div>
-            <button 
+            <button
               onClick={onClose}
               className="p-2 hover:bg-slate-100 rounded-full transition-colors"
             >
@@ -353,12 +353,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   const currentIdx = steps.indexOf(step);
                   const isActive = idx <= currentIdx;
                   const isCurrent = s === step;
-                  
+
                   // Skip extras step if no services available
                   if (s === 'extras' && !offer?.available_services?.length) {
                     return null;
                   }
-                  
+
                   return (
                     <div key={s} className="flex items-center">
                       <div className={`
@@ -401,14 +401,14 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                       <p className="text-sm text-slate-500">{flight.flightNumber}</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div className="text-center">
                       <p className="text-2xl font-bold text-slate-900">{formatTime(flight.departureTime)}</p>
                       <p className="text-sm text-slate-600">{flight.origin}</p>
                       <p className="text-xs text-slate-400">{formatDate(flight.departureTime)}</p>
                     </div>
-                    
+
                     <div className="flex-1 px-6">
                       <div className="flex items-center justify-center gap-2">
                         <div className="h-px flex-1 bg-slate-300" />
@@ -422,12 +422,55 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         <div className="h-px flex-1 bg-slate-300" />
                       </div>
                     </div>
-                    
+
                     <div className="text-center">
                       <p className="text-2xl font-bold text-slate-900">{formatTime(flight.arrivalTime)}</p>
                       <p className="text-sm text-slate-600">{flight.destination}</p>
                     </div>
                   </div>
+
+                  {/* Return Flight */}
+                  {flight.returnFlight && (
+                    <>
+                      <div className="my-4 border-t border-slate-200 border-dashed"></div>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
+                          <Plane className="text-sky-600 rotate-180" size={20} />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900">{flight.returnFlight.airline}</p>
+                          <p className="text-sm text-slate-500">{flight.returnFlight.flightNumber}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-slate-900">{formatTime(flight.returnFlight.departureTime)}</p>
+                          <p className="text-sm text-slate-600">{flight.destination}</p>
+                          <p className="text-xs text-slate-400">{formatDate(flight.returnFlight.departureTime)}</p>
+                        </div>
+
+                        <div className="flex-1 px-6">
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="h-px flex-1 bg-slate-300" />
+                            <div className="flex flex-col items-center">
+                              <Clock size={14} className="text-slate-400 mb-1" />
+                              <span className="text-xs text-slate-500">{flight.returnFlight.duration}</span>
+                              <span className="text-xs text-green-600 font-medium">
+                                {flight.returnFlight.stops === 0 ? 'Direct' : `${flight.returnFlight.stops} stop${flight.returnFlight.stops > 1 ? 's' : ''}`}
+                              </span>
+                            </div>
+                            <div className="h-px flex-1 bg-slate-300" />
+                          </div>
+                        </div>
+
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-slate-900">{formatTime(flight.returnFlight.arrivalTime)}</p>
+                          <p className="text-sm text-slate-600">{flight.origin}</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Price Breakdown */}
@@ -471,7 +514,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     <ul className="text-sm text-amber-700 space-y-1">
                       {offer.conditions.refund_before_departure && (
                         <li>
-                          {offer.conditions.refund_before_departure.allowed 
+                          {offer.conditions.refund_before_departure.allowed
                             ? `✓ Refundable (${offer.conditions.refund_before_departure.penalty_amount ? `$${offer.conditions.refund_before_departure.penalty_amount} fee` : 'no fee'})`
                             : '✗ Non-refundable'
                           }
@@ -500,7 +543,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                       <User className="text-slate-600" size={18} />
                       <h3 className="font-semibold text-slate-900">Passenger {idx + 1}</h3>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -519,7 +562,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                           <option value="dr">Dr</option>
                         </select>
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
                           Gender
@@ -534,7 +577,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                           <option value="female">Female</option>
                         </select>
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
                           First Name <span className="text-red-500">*</span>
@@ -547,7 +590,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
                           Last Name <span className="text-red-500">*</span>
@@ -560,7 +603,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
                           Date of Birth <span className="text-red-500">*</span>
@@ -572,7 +615,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
                           Email <span className="text-red-500">*</span>
@@ -585,7 +628,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                         />
                       </div>
-                      
+
                       <div className="col-span-2">
                         <label className="block text-sm font-medium text-slate-700 mb-1">
                           Phone Number
@@ -610,14 +653,14 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 <p className="text-sm text-slate-600 mb-4">
                   Add extras to enhance your journey
                 </p>
-                
+
                 {offer.available_services.map((service) => (
-                  <div 
+                  <div
                     key={service.id}
                     className={`
                       p-4 rounded-xl border-2 transition-colors cursor-pointer
-                      ${selectedServices.has(service.id) 
-                        ? 'border-sky-500 bg-sky-50' 
+                      ${selectedServices.has(service.id)
+                        ? 'border-sky-500 bg-sky-50'
                         : 'border-slate-200 hover:border-slate-300'
                       }
                     `}
@@ -641,7 +684,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         </div>
                         <div>
                           <p className="font-medium text-slate-900">
-                            {service.type === 'baggage' 
+                            {service.type === 'baggage'
                               ? `${service.metadata?.type === 'checked' ? 'Checked Bag' : 'Carry-on Bag'} (${service.metadata?.maximum_weight_kg}kg)`
                               : service.type
                             }
@@ -703,8 +746,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                       onClick={() => setPaymentMethod('card')}
                       className={`
                         p-4 rounded-xl border-2 transition-colors flex items-center gap-3
-                        ${paymentMethod === 'card' 
-                          ? 'border-sky-500 bg-sky-50' 
+                        ${paymentMethod === 'card'
+                          ? 'border-sky-500 bg-sky-50'
                           : 'border-slate-200 hover:border-slate-300'
                         }
                       `}
@@ -714,20 +757,20 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         Credit Card
                       </span>
                     </button>
-                    
+
                     {isPayPalEnabled() && (
                       <button
                         onClick={() => setPaymentMethod('paypal')}
                         className={`
                           p-4 rounded-xl border-2 transition-colors flex items-center gap-3
-                          ${paymentMethod === 'paypal' 
-                            ? 'border-sky-500 bg-sky-50' 
+                          ${paymentMethod === 'paypal'
+                            ? 'border-sky-500 bg-sky-50'
                             : 'border-slate-200 hover:border-slate-300'
                           }
                         `}
                       >
                         <svg className="w-6 h-6" viewBox="0 0 24 24" fill={paymentMethod === 'paypal' ? '#0070ba' : '#64748b'}>
-                          <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.77.77 0 0 1 .757-.629h6.724c2.237 0 3.913.476 4.98 1.414.476.42.83.925 1.05 1.5.228.593.303 1.286.222 2.06-.01.092-.023.184-.038.278-.49 3.166-2.168 4.776-4.987 4.776h-1.59a.77.77 0 0 0-.758.63l-.727 4.588-.206 1.305a.641.641 0 0 1-.633.74h-2.66z"/>
+                          <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.77.77 0 0 1 .757-.629h6.724c2.237 0 3.913.476 4.98 1.414.476.42.83.925 1.05 1.5.228.593.303 1.286.222 2.06-.01.092-.023.184-.038.278-.49 3.166-2.168 4.776-4.987 4.776h-1.59a.77.77 0 0 0-.758.63l-.727 4.588-.206 1.305a.641.641 0 0 1-.633.74h-2.66z" />
                         </svg>
                         <span className={paymentMethod === 'paypal' ? 'text-sky-700 font-medium' : 'text-slate-700'}>
                           PayPal
@@ -746,7 +789,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 {paymentMethod === 'card' && (
                   <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                     <p className="text-sm text-slate-600 text-center">
-                      {isDuffelEnabled() 
+                      {isDuffelEnabled()
                         ? 'Duffel secure payment will be processed'
                         : 'Demo mode - No actual payment will be processed'
                       }
@@ -762,22 +805,22 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <CheckCircle className="text-green-600" size={40} />
                 </div>
-                
+
                 <h3 className="text-2xl font-bold text-slate-900 mb-2">
                   Booking Confirmed!
                 </h3>
-                
+
                 <p className="text-slate-600 mb-6">
                   Your flight has been booked successfully.
                 </p>
-                
+
                 {bookingReference && (
                   <div className="bg-slate-100 rounded-xl p-4 inline-block mb-6">
                     <p className="text-sm text-slate-500 mb-1">Booking Reference</p>
                     <p className="text-2xl font-mono font-bold text-slate-900">{bookingReference}</p>
                   </div>
                 )}
-                
+
                 <div className="bg-sky-50 rounded-xl p-4 border border-sky-200 text-left max-w-md mx-auto">
                   <h4 className="font-semibold text-sky-900 mb-2">What's next?</h4>
                   <ul className="text-sm text-sky-700 space-y-2">
@@ -797,7 +840,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 <p className="text-sm text-slate-500">Total</p>
                 <p className="text-2xl font-bold text-slate-900">${calculateTotal().toFixed(2)}</p>
               </div>
-              
+
               {step === 'payment' && paymentMethod === 'card' ? (
                 <Button
                   onClick={handleCardPayment}

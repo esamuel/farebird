@@ -41,6 +41,7 @@ export const FlightCard: React.FC<FlightCardProps> = ({
     origin: flight.origin,
     destination: flight.destination,
     departureDate: flight.departureTime,
+    returnDate: flight.returnFlight?.departureTime,
     airline: flight.airline,
     flightNumber: flight.flightNumber,
   };
