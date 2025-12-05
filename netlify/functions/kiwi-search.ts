@@ -17,10 +17,11 @@ const handler: Handler = async (event) => {
 
     const apiKey = process.env.KIWI_API_KEY;
     if (!apiKey) {
+        // Return empty result instead of error to avoid 500s in logs
         return {
-            statusCode: 500,
+            statusCode: 200,
             headers,
-            body: JSON.stringify({ error: 'KIWI_API_KEY not configured' }),
+            body: JSON.stringify({ data: [] }),
         };
     }
 

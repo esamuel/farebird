@@ -160,6 +160,12 @@ const searchFlightsWithAmadeus = async (params: SearchParams): Promise<Flight[]>
 
 // --- Fallback Search: Gemini AI ---
 const searchFlightsWithGemini = async (params: SearchParams): Promise<Flight[]> => {
+  // Check if API key is configured
+  if (!import.meta.env.VITE_API_KEY) {
+    console.warn("Gemini API Key missing, returning empty result.");
+    return [];
+  }
+
   try {
     const prompt = `
       Generate 5 realistic flight options from ${params.origin} to ${params.destination} on ${params.date}.
