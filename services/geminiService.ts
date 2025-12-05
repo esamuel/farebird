@@ -87,7 +87,7 @@ const searchFlightsViaNetlify = async (params: SearchParams): Promise<{ source: 
   }
 
   const response = await fetch(`/api/amadeus-search?${queryParams}`);
-  
+
   if (!response.ok) {
     throw new Error(`Netlify function error: ${response.status}`);
   }
@@ -118,26 +118,42 @@ const searchFlightsWithAmadeus = async (params: SearchParams): Promise<Flight[]>
 
   // Map Amadeus response to our simple Flight interface
   return data.data.map((offer: any) => {
-    const it = offer.itineraries[0];
-    const segment = it.segments[0];
-    const lastSegment = it.segments[it.segments.length - 1];
+    const outboundItinerary = offer.itineraries[0];
+    const outboundSegment = outboundItinerary.segments[0];
+    const outboundLastSegment = outboundItinerary.segments[outboundItinerary.segments.length - 1];
+    const outboundDuration = outboundItinerary.duration.replace('PT', '').toLowerCase();
 
-    // Calculate Duration properly e.g. PT2H30M -> 2h 30m
-    const cleanDuration = it.duration.replace('PT', '').toLowerCase();
+    let returnFlight = undefined;
+    if (offer.itineraries.length > 1) {
+      const returnItinerary = offer.itineraries[1];
+      const returnSegment = returnItinerary.segments[0];
+      const returnLastSegment = returnItinerary.segments[returnItinerary.segments.length - 1];
+      const returnDuration = returnItinerary.duration.replace('PT', '').toLowerCase();
+
+      returnFlight = {
+        airline: returnSegment.carrierCode,
+        flightNumber: `${returnSegment.carrierCode}${returnSegment.number}`,
+        departureTime: returnSegment.departure.at,
+        arrivalTime: returnLastSegment.arrival.at,
+        duration: returnDuration,
+        stops: returnItinerary.segments.length - 1
+      };
+    }
 
     return {
       id: offer.id,
-      airline: segment.carrierCode, // In a real app, you'd map "LH" to "Lufthansa"
-      flightNumber: `${segment.carrierCode}${segment.number}`,
-      origin: segment.departure.iataCode,
-      destination: lastSegment.arrival.iataCode,
-      departureTime: segment.departure.at,
-      arrivalTime: lastSegment.arrival.at,
+      airline: outboundSegment.carrierCode, // In a real app, you'd map "LH" to "Lufthansa"
+      flightNumber: `${outboundSegment.carrierCode}${outboundSegment.number}`,
+      origin: outboundSegment.departure.iataCode,
+      destination: outboundLastSegment.arrival.iataCode,
+      departureTime: outboundSegment.departure.at,
+      arrivalTime: outboundLastSegment.arrival.at,
       price: parseFloat(offer.price.total),
       currency: offer.price.currency,
-      duration: cleanDuration,
-      stops: it.segments.length - 1,
-      tags: ['Real Data']
+      duration: outboundDuration,
+      stops: outboundItinerary.segments.length - 1,
+      tags: ['Real Data'],
+      returnFlight: returnFlight
     };
   });
 };
@@ -147,8 +163,9 @@ const searchFlightsWithGemini = async (params: SearchParams): Promise<Flight[]> 
   try {
     const prompt = `
       Generate 5 realistic flight options from ${params.origin} to ${params.destination} on ${params.date}.
+      ${params.returnDate ? `Include return flight details from ${params.destination} to ${params.origin} on ${params.returnDate}.` : ''}
       Include a mix of direct and connecting flights. vary the airlines and prices.
-      Price should be realistic for a one-way ticket in USD.
+      Price should be realistic for a ${params.returnDate ? 'round-trip' : 'one-way'} ticket in USD.
     `;
 
     const response = await ai.models.generateContent({
@@ -183,6 +200,18 @@ const searchFlightsWithGemini = async (params: SearchParams): Promise<Flight[]> 
                   carryOn: { type: Type.NUMBER, description: "Fee for carry-on bag in USD" },
                   checkedBag: { type: Type.NUMBER, description: "Fee for checked bag in USD" }
                 }
+              },
+              returnFlight: {
+                type: Type.OBJECT,
+                nullable: true,
+                properties: {
+                  airline: { type: Type.STRING },
+                  flightNumber: { type: Type.STRING },
+                  departureTime: { type: Type.STRING, description: "ISO 8601 format date string" },
+                  arrivalTime: { type: Type.STRING, description: "ISO 8601 format date string" },
+                  duration: { type: Type.STRING },
+                  stops: { type: Type.NUMBER }
+                }
               }
             }
           }
@@ -205,14 +234,14 @@ export const searchFlightsWithAI = async (params: SearchParams): Promise<{ sourc
     try {
       console.log("Using Netlify serverless function for Amadeus API...");
       const result = await searchFlightsViaNetlify(params);
-      
+
       // If serverless function returned AI source (credentials not configured), fall back to Gemini
       if (result.source === 'AI' && result.data.length === 0) {
         console.log("Serverless function indicated no API config, using Gemini fallback...");
         const aiData = await searchFlightsWithGemini(params);
         return { source: 'AI', data: aiData };
       }
-      
+
       return result;
     } catch (error) {
       console.warn("Netlify function failed, switching to AI fallback...", error);
@@ -382,9 +411,9 @@ export const getLastMinuteDeals = async (origin: string = 'JFK', maxBudget?: num
     const today = new Date();
     const nextWeek = new Date(today);
     nextWeek.setDate(nextWeek.getDate() + 7);
-    
+
     const budgetClause = maxBudget ? `All deals must be under $${maxBudget}.` : '';
-    
+
     const prompt = `
       Generate 6 last-minute flight deals departing from ${origin} within the next 7 days (${today.toISOString().split('T')[0]} to ${nextWeek.toISOString().split('T')[0]}).
       ${budgetClause}
@@ -499,10 +528,10 @@ Return ONLY the JSON array, no markdown.`;
       }
     });
     const text = response.text || '';
-    
+
     // Clean up response
     let cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    
+
     const data = JSON.parse(cleanText);
     return data as MistakeFare[];
   } catch (error) {

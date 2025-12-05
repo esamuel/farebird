@@ -16,6 +16,14 @@ export interface Flight {
     checkedBag: number;
   };
   duffelOfferId?: string; // If set, this flight comes from Duffel and can be booked for real
+  returnFlight?: {
+    airline: string;
+    flightNumber: string;
+    departureTime: string;
+    arrivalTime: string;
+    duration: string;
+    stops: number;
+  };
 }
 
 export type CabinClass = 'economy' | 'premiumEconomy' | 'business' | 'first';

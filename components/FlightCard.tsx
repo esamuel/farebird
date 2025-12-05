@@ -25,10 +25,10 @@ export const FlightCard: React.FC<FlightCardProps> = ({
 }) => {
   const [showBookingOptions, setShowBookingOptions] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
-  
+
   // Check if in-app booking is available (Duffel configured or demo mode)
   const canBookInApp = enableInAppBooking && (isDuffelEnabled() || true); // Always allow for demo
-  
+
   const formatTime = (isoString: string) => {
     return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
@@ -52,7 +52,7 @@ export const FlightCard: React.FC<FlightCardProps> = ({
       openBookingPage(bookingParams);
     }
   };
-  
+
   const bookingOptions = getBookingOptions(bookingParams);
   const hasDirect = hasDirectBooking(flight.airline);
   const providerName = getBookingProviderName(bookingParams);
@@ -77,28 +77,61 @@ export const FlightCard: React.FC<FlightCardProps> = ({
         </div>
 
         {/* Route Info */}
-        <div className="flex flex-1 items-center justify-center gap-6 w-full md:w-auto">
-          <div className="text-center">
-            <p className="text-lg font-bold text-slate-800">{formatTime(flight.departureTime)}</p>
-            <p className="text-xs text-slate-500 uppercase">{flight.origin}</p>
-          </div>
-
-          <div className="flex flex-col items-center w-24">
-            <p className="text-xs text-slate-400 mb-1">{flight.duration}</p>
-            <div className="w-full h-[2px] bg-slate-200 relative">
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-slate-200 p-1 rounded-full">
-                <ArrowRight size={12} className="text-slate-400" />
-              </div>
+        <div className="flex flex-1 flex-col justify-center gap-4 w-full md:w-auto">
+          {/* Outbound */}
+          <div className="flex items-center justify-center gap-6">
+            <div className="text-center w-16">
+              <p className="text-lg font-bold text-slate-800">{formatTime(flight.departureTime)}</p>
+              <p className="text-xs text-slate-500 uppercase">{flight.origin}</p>
             </div>
-            <p className="text-xs text-green-600 mt-1 font-medium">
-              {flight.stops === 0 ? 'Direct' : `${flight.stops} Stop${flight.stops > 1 ? 's' : ''}`}
-            </p>
+
+            <div className="flex flex-col items-center w-24">
+              <p className="text-xs text-slate-400 mb-1">{flight.duration}</p>
+              <div className="w-full h-[2px] bg-slate-200 relative">
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-slate-200 p-1 rounded-full">
+                  <ArrowRight size={12} className="text-slate-400" />
+                </div>
+              </div>
+              <p className="text-xs text-green-600 mt-1 font-medium">
+                {flight.stops === 0 ? 'Direct' : `${flight.stops} Stop${flight.stops > 1 ? 's' : ''}`}
+              </p>
+            </div>
+
+            <div className="text-center w-16">
+              <p className="text-lg font-bold text-slate-800">{formatTime(flight.arrivalTime)}</p>
+              <p className="text-xs text-slate-500 uppercase">{flight.destination}</p>
+            </div>
           </div>
 
-          <div className="text-center">
-            <p className="text-lg font-bold text-slate-800">{formatTime(flight.arrivalTime)}</p>
-            <p className="text-xs text-slate-500 uppercase">{flight.destination}</p>
-          </div>
+          {/* Return Flight (if exists) */}
+          {flight.returnFlight && (
+            <>
+              <div className="h-px bg-slate-100 w-full"></div>
+              <div className="flex items-center justify-center gap-6">
+                <div className="text-center w-16">
+                  <p className="text-lg font-bold text-slate-800">{formatTime(flight.returnFlight.departureTime)}</p>
+                  <p className="text-xs text-slate-500 uppercase">{flight.destination}</p>
+                </div>
+
+                <div className="flex flex-col items-center w-24">
+                  <p className="text-xs text-slate-400 mb-1">{flight.returnFlight.duration}</p>
+                  <div className="w-full h-[2px] bg-slate-200 relative">
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-slate-200 p-1 rounded-full">
+                      <ArrowRight size={12} className="text-slate-400 rotate-180" />
+                    </div>
+                  </div>
+                  <p className="text-xs text-green-600 mt-1 font-medium">
+                    {flight.returnFlight.stops === 0 ? 'Direct' : `${flight.returnFlight.stops} Stop${flight.returnFlight.stops > 1 ? 's' : ''}`}
+                  </p>
+                </div>
+
+                <div className="text-center w-16">
+                  <p className="text-lg font-bold text-slate-800">{formatTime(flight.returnFlight.arrivalTime)}</p>
+                  <p className="text-xs text-slate-500 uppercase">{flight.origin}</p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Price & Action */}
@@ -137,7 +170,7 @@ export const FlightCard: React.FC<FlightCardProps> = ({
                       <>{hasDirect ? `Book on ${flight.airline.split(' ')[0]}` : 'Book'} <ExternalLink size={12} /></>
                     )}
                   </Button>
-                  
+
                   {/* Dropdown for external booking options (only when not using in-app) */}
                   {!canBookInApp && (
                     <Button
@@ -150,7 +183,7 @@ export const FlightCard: React.FC<FlightCardProps> = ({
                     </Button>
                   )}
                 </div>
-                
+
                 {/* Booking Options Dropdown (external providers) */}
                 {showBookingOptions && !canBookInApp && (
                   <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
@@ -186,7 +219,7 @@ export const FlightCard: React.FC<FlightCardProps> = ({
           )}
         </div>
       </div>
-      
+
       {/* In-App Booking Modal */}
       {showBookingModal && (
         <BookingModal
