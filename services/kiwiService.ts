@@ -91,55 +91,23 @@ export const searchFlightsWithKiwi = async (params: SearchParams): Promise<Fligh
         const response = await fetch(`${NETLIFY_FUNCTION_URL}?${queryParams.toString()}`);
 
         if (!response.ok) {
-            // If 401/403 or other error, fallback to mock data
-            console.warn('Kiwi API error or not authorized, using mock data');
-            return generateMockKiwiFlights(params);
+            // If 401/403, it might mean key is missing, just return empty to not break app
+            if (response.status === 401 || response.status === 403) {
+                console.warn('Kiwi API not authorized (check API key)');
+                return [];
+            }
+            throw new Error(`Kiwi API error: ${response.statusText}`);
         }
 
         const result = await response.json();
 
-        if (!result.data) return generateMockKiwiFlights(params);
+        if (!result.data) return [];
 
         return result.data.map((offer: KiwiFlight) => mapKiwiOfferToFlight(offer));
     } catch (error) {
-        console.warn('Kiwi search failed, using mock data:', error);
-        return generateMockKiwiFlights(params);
+        console.error('Kiwi search failed:', error);
+        return [];
     }
-};
-
-// --- Mock Data Generator ---
-const generateMockKiwiFlights = (params: SearchParams): Flight[] => {
-    const mockFlights: Flight[] = [];
-    const airlines = ['Ryanair', 'EasyJet', 'Wizz Air', 'Vueling'];
-
-    for (let i = 0; i < 3; i++) {
-        const airline1 = airlines[Math.floor(Math.random() * airlines.length)];
-        const airline2 = airlines[Math.floor(Math.random() * airlines.length)];
-        const price = 80 + Math.floor(Math.random() * 150);
-
-        // Create a "Virtual Interlining" flight (combining two low-cost carriers)
-        mockFlights.push({
-            id: `kiwi-mock-${i}`,
-            airline: `${airline1} + ${airline2}`,
-            flightNumber: `VI${100 + i}`,
-            origin: params.origin,
-            destination: params.destination,
-            departureTime: `${params.date}T${10 + i}:00:00`,
-            arrivalTime: `${params.date}T${14 + i}:30:00`,
-            price: price,
-            currency: 'USD',
-            duration: '4h 30m',
-            stops: 1,
-            tags: ['Kiwi.com', 'Virtual Interline', 'Cheapest'],
-            baggageFees: {
-                carryOn: 30,
-                checkedBag: 50
-            },
-            bookingLink: 'https://www.kiwi.com/us/'
-        });
-    }
-
-    return mockFlights;
 };
 
 const mapKiwiOfferToFlight = (offer: KiwiFlight): Flight => {
