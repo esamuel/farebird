@@ -307,21 +307,27 @@ export const Dashboard: React.FC = () => {
 
   // Sorting Logic with real cost
   const sortedFlights = useMemo(() => {
-    const sorted = [...flights];
+    // First, filter by stops if maxStops is set
+    let filtered = [...flights];
+    if (params.maxStops !== undefined && params.maxStops < 2) {
+      filtered = filtered.filter(flight => flight.stops <= params.maxStops);
+    }
+
+    // Then sort
     switch (sortBy) {
       case FlightSortOption.CHEAPEST:
-        return sorted.sort((a, b) => calculateRealCost(a) - calculateRealCost(b));
+        return filtered.sort((a, b) => calculateRealCost(a) - calculateRealCost(b));
       case FlightSortOption.FASTEST:
-        return sorted.sort((a, b) => parseDuration(a.duration) - parseDuration(b.duration));
+        return filtered.sort((a, b) => parseDuration(a.duration) - parseDuration(b.duration));
       case FlightSortOption.BEST:
       default:
-        return sorted.sort((a, b) => {
+        return filtered.sort((a, b) => {
           const scoreA = calculateRealCost(a) + (parseDuration(a.duration) * 0.5);
           const scoreB = calculateRealCost(b) + (parseDuration(b.duration) * 0.5);
           return scoreA - scoreB;
         });
     }
-  }, [flights, sortBy, params.includeCarryOn, params.includeCheckedBag]);
+  }, [flights, sortBy, params.includeCarryOn, params.includeCheckedBag, params.maxStops]);
 
   // Clear results when switching modes
   useEffect(() => {
@@ -515,11 +521,25 @@ export const Dashboard: React.FC = () => {
               {/* Travelers & Class Button */}
               <button
                 onClick={() => setShowTravelersSelector(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-slate-50 text-slate-600 border-2 border-transparent hover:bg-slate-100 transition-all ml-auto"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-slate-50 text-slate-600 border-2 border-transparent hover:bg-slate-100 transition-all"
               >
                 <Users size={16} />
                 {params.adults + params.children + params.infants} Traveler{params.adults + params.children + params.infants !== 1 ? 's' : ''}, {params.cabinClass === 'economy' ? 'Economy' : params.cabinClass === 'premiumEconomy' ? 'Premium' : params.cabinClass === 'business' ? 'Business' : 'First'}
               </button>
+
+              {/* Stops Filter */}
+              <div className="relative">
+                <select
+                  value={params.maxStops ?? 2}
+                  onChange={(e) => setParams({ ...params, maxStops: parseInt(e.target.value) })}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-slate-50 text-slate-600 border-2 border-transparent hover:bg-slate-100 transition-all appearance-none pr-8 cursor-pointer"
+                >
+                  <option value={0}>Direct only</option>
+                  <option value={1}>Max 1 stop</option>
+                  <option value={2}>Any stops</option>
+                </select>
+                <Plane size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

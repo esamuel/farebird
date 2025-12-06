@@ -42,6 +42,7 @@ export interface SearchParams {
   cabinClass: CabinClass;
   includeCarryOn?: boolean;
   includeCheckedBag?: boolean;
+  maxStops?: number; // 0 = direct only, 1 = max 1 stop, 2+ = any
 }
 
 export interface User {
