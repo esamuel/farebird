@@ -392,19 +392,63 @@ export const parseNaturalLanguageQuery = async (query: string): Promise<SearchPa
 const parseQueryWithRegex = (query: string): SearchParams | null => {
   const lowerQuery = query.toLowerCase();
 
-  // Try to extract destination (common city/airport names)
-  const destinations: Record<string, string> = {
+  // Common cities/airports mapping
+  const cityToAirport: Record<string, string> = {
     'paris': 'CDG', 'london': 'LHR', 'tokyo': 'NRT', 'new york': 'JFK',
     'los angeles': 'LAX', 'miami': 'MIA', 'chicago': 'ORD', 'boston': 'BOS',
     'san francisco': 'SFO', 'seattle': 'SEA', 'las vegas': 'LAS', 'orlando': 'MCO',
-    'rome': 'FCO', 'barcelona': 'BCN', 'amsterdam': 'AMS', 'dubai': 'DXB'
+    'rome': 'FCO', 'barcelona': 'BCN', 'amsterdam': 'AMS', 'dubai': 'DXB',
+    'atlanta': 'ATL', 'denver': 'DEN', 'phoenix': 'PHX', 'houston': 'IAH',
+    'dallas': 'DFW', 'philadelphia': 'PHL', 'detroit': 'DTW', 'minneapolis': 'MSP',
+    'madrid': 'MAD', 'berlin': 'BER', 'munich': 'MUC', 'vienna': 'VIE',
+    'zurich': 'ZRH', 'istanbul': 'IST', 'athens': 'ATH', 'lisbon': 'LIS',
+    'hong kong': 'HKG', 'singapore': 'SIN', 'bangkok': 'BKK', 'sydney': 'SYD',
+    'melbourne': 'MEL', 'toronto': 'YYZ', 'vancouver': 'YVR', 'montreal': 'YUL',
+    'mexico city': 'MEX', 'cancun': 'CUN', 'sao paulo': 'GRU', 'buenos aires': 'EZE'
   };
 
+  let origin = 'JFK'; // Default
   let destination = '';
-  for (const [city, code] of Object.entries(destinations)) {
-    if (lowerQuery.includes(city)) {
-      destination = code;
-      break;
+
+  // Try to extract origin (look for "from [city]" pattern)
+  const fromMatch = lowerQuery.match(/from\s+([a-z\s]+?)(?:\s+to|\s+in|\s+for|$)/);
+  if (fromMatch) {
+    const fromCity = fromMatch[1].trim();
+    for (const [city, code] of Object.entries(cityToAirport)) {
+      if (fromCity.includes(city)) {
+        origin = code;
+        break;
+      }
+    }
+    // Also check for direct airport codes (e.g., "from LAX")
+    const airportCodeMatch = fromCity.match(/\b([A-Z]{3})\b/i);
+    if (airportCodeMatch) {
+      origin = airportCodeMatch[1].toUpperCase();
+    }
+  }
+
+  // Try to extract destination (look for "to [city]" pattern or just city names)
+  const toMatch = lowerQuery.match(/to\s+([a-z\s]+?)(?:\s+from|\s+in|\s+for|\s+on|\s+next|\s+under|$)/);
+  if (toMatch) {
+    const toCity = toMatch[1].trim();
+    for (const [city, code] of Object.entries(cityToAirport)) {
+      if (toCity.includes(city)) {
+        destination = code;
+        break;
+      }
+    }
+    // Also check for direct airport codes
+    const airportCodeMatch = toCity.match(/\b([A-Z]{3})\b/i);
+    if (airportCodeMatch) {
+      destination = airportCodeMatch[1].toUpperCase();
+    }
+  } else {
+    // If no "to" keyword, look for any city name in the query
+    for (const [city, code] of Object.entries(cityToAirport)) {
+      if (lowerQuery.includes(city) && cityToAirport[city] !== origin) {
+        destination = code;
+        break;
+      }
     }
   }
 
@@ -445,7 +489,7 @@ const parseQueryWithRegex = (query: string): SearchParams | null => {
   }
 
   return {
-    origin: 'JFK', // Default
+    origin,
     destination,
     date,
     passengers,
