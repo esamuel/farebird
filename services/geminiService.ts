@@ -341,6 +341,13 @@ export const getPriceInsights = async (origin: string, destination: string): Pro
 
 // --- Natural Language Search Parser ---
 export const parseNaturalLanguageQuery = async (query: string): Promise<SearchParams | null> => {
+  // Check if API key is configured
+  if (!import.meta.env.VITE_API_KEY) {
+    console.warn("Gemini API Key missing, using basic parsing fallback");
+    // Basic fallback parsing using regex
+    return parseQueryWithRegex(query);
+  }
+
   try {
     const prompt = `
       Parse this natural language flight search query into structured parameters: "${query}"
@@ -376,8 +383,78 @@ export const parseNaturalLanguageQuery = async (query: string): Promise<SearchPa
     return data as SearchParams;
   } catch (error) {
     console.error("Natural Language Parse Error:", error);
-    return null;
+    // Fall back to regex parsing
+    return parseQueryWithRegex(query);
   }
+};
+
+// Basic regex-based query parser (fallback when Gemini is unavailable)
+const parseQueryWithRegex = (query: string): SearchParams | null => {
+  const lowerQuery = query.toLowerCase();
+
+  // Try to extract destination (common city/airport names)
+  const destinations: Record<string, string> = {
+    'paris': 'CDG', 'london': 'LHR', 'tokyo': 'NRT', 'new york': 'JFK',
+    'los angeles': 'LAX', 'miami': 'MIA', 'chicago': 'ORD', 'boston': 'BOS',
+    'san francisco': 'SFO', 'seattle': 'SEA', 'las vegas': 'LAS', 'orlando': 'MCO',
+    'rome': 'FCO', 'barcelona': 'BCN', 'amsterdam': 'AMS', 'dubai': 'DXB'
+  };
+
+  let destination = '';
+  for (const [city, code] of Object.entries(destinations)) {
+    if (lowerQuery.includes(city)) {
+      destination = code;
+      break;
+    }
+  }
+
+  // Extract number of passengers
+  const passengersMatch = lowerQuery.match(/(\d+)\s*(people|person|passenger|traveler)/);
+  const passengers = passengersMatch ? parseInt(passengersMatch[1]) : 1;
+
+  // Extract date (basic - look for month names)
+  const today = new Date();
+  const months = ['january', 'february', 'march', 'april', 'may', 'june',
+    'july', 'august', 'september', 'october', 'november', 'december'];
+  let date = today.toISOString().split('T')[0];
+
+  for (let i = 0; i < months.length; i++) {
+    if (lowerQuery.includes(months[i])) {
+      const targetDate = new Date(today.getFullYear(), i, 15);
+      if (targetDate < today) {
+        targetDate.setFullYear(targetDate.getFullYear() + 1);
+      }
+      date = targetDate.toISOString().split('T')[0];
+      break;
+    }
+  }
+
+  // Handle "next week/weekend/month"
+  if (lowerQuery.includes('next week') || lowerQuery.includes('next weekend')) {
+    const nextWeek = new Date(today);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    date = nextWeek.toISOString().split('T')[0];
+  } else if (lowerQuery.includes('next month')) {
+    const nextMonth = new Date(today);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    date = nextMonth.toISOString().split('T')[0];
+  }
+
+  if (!destination) {
+    return null; // Can't parse without at least a destination
+  }
+
+  return {
+    origin: 'JFK', // Default
+    destination,
+    date,
+    passengers,
+    tripType: 'oneWay',
+    adults: passengers,
+    children: 0,
+    infants: 0,
+    cabinClass: 'economy'
+  } as SearchParams;
 };
 
 // --- Vibe-Based Destination Discovery ---
