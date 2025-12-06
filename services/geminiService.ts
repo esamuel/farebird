@@ -404,7 +404,8 @@ const parseQueryWithRegex = (query: string): SearchParams | null => {
     'zurich': 'ZRH', 'istanbul': 'IST', 'athens': 'ATH', 'lisbon': 'LIS',
     'hong kong': 'HKG', 'singapore': 'SIN', 'bangkok': 'BKK', 'sydney': 'SYD',
     'melbourne': 'MEL', 'toronto': 'YYZ', 'vancouver': 'YVR', 'montreal': 'YUL',
-    'mexico city': 'MEX', 'cancun': 'CUN', 'sao paulo': 'GRU', 'buenos aires': 'EZE'
+    'mexico city': 'MEX', 'cancun': 'CUN', 'sao paulo': 'GRU', 'buenos aires': 'EZE',
+    'tel aviv': 'TLV'
   };
 
   let origin = 'JFK'; // Default
