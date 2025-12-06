@@ -11,8 +11,16 @@ import { TermsOfService } from './pages/TermsOfService';
 import { CookiePolicy } from './pages/CookiePolicy';
 import { CompanyDetails } from './pages/CompanyDetails';
 import { FlightStatus } from './pages/FlightStatus';
+import { checkEnvVars } from './utils/envDiagnostic';
 
 const App: React.FC = () => {
+  // Run diagnostic on mount (development only)
+  React.useEffect(() => {
+    if (import.meta.env.DEV) {
+      checkEnvVars();
+    }
+  }, []);
+
   return (
     <Router>
       <Layout>
