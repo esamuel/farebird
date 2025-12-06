@@ -9,8 +9,7 @@ export const Footer: React.FC = () => {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <img src="/farebird-icon.svg" alt="Farebird" className="h-8 w-8" />
-              <span className="text-lg font-bold">farebird</span>
+              <img src="/farebird-logo.png" alt="Farebird" className="h-12 w-auto" />
             </div>
             <p className="text-slate-400 text-sm">
               Catch the best flight deals before they fly away.

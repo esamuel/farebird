@@ -13,24 +13,29 @@ export const LandingPage: React.FC = () => {
           <div className="absolute right-0 top-0 -translate-y-1/2 translate-x-1/2 w-[800px] h-[800px] bg-sky-100/50 rounded-full blur-3xl" />
           <div className="absolute left-0 bottom-0 translate-y-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-amber-50/50 rounded-full blur-3xl" />
         </div>
-        
+
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          {/* Logo */}
+          <div className="mb-8 flex justify-center">
+            <img src="/farebird-logo.png" alt="Farebird" className="h-32 md:h-40 w-auto" />
+          </div>
+
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 text-amber-700 text-sm font-medium mb-8 border border-amber-100 shadow-sm">
             <Zap size={16} />
             <span>Now powered by Gemini 2.5 AI</span>
           </div>
-          
+
           <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight mb-8">
             Explore the world, <br className="hidden md:block" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-600 to-blue-600">
               without the markup.
             </span>
           </h1>
-          
+
           <p className="max-w-2xl mx-auto text-xl text-slate-600 mb-10 leading-relaxed">
             Farebird uses advanced AI to monitor prices, predict drops, and find hidden deals that standard search engines miss.
           </p>
-          
+
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <NavLink to="/dashboard">
               <Button size="lg" className="w-full sm:w-auto text-lg px-8 h-14 shadow-xl shadow-sky-200">
