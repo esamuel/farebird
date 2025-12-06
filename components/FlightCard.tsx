@@ -6,6 +6,43 @@ import { openBookingPage, getBookingProviderName, hasDirectBooking, getBookingOp
 import { isDuffelEnabled } from '../services/duffelService';
 import { BookingModal } from './BookingModal';
 
+// Airline logo helpers
+const getAirlineDomain = (airlineName: string): string => {
+  const airlineMap: Record<string, string> = {
+    'American Airlines': 'aa.com',
+    'Delta': 'delta.com',
+    'United': 'united.com',
+    'Southwest': 'southwest.com',
+    'JetBlue': 'jetblue.com',
+    'Alaska Airlines': 'alaskaair.com',
+    'British Airways': 'britishairways.com',
+    'Lufthansa': 'lufthansa.com',
+    'Air France': 'airfrance.com',
+    'KLM': 'klm.com',
+    'Emirates': 'emirates.com',
+    'Qatar Airways': 'qatarairways.com',
+    'Ryanair': 'ryanair.com',
+    'EasyJet': 'easyjet.com',
+    'Wizz Air': 'wizzair.com',
+    'Vueling': 'vueling.com',
+    'Iberia': 'iberia.com',
+    'ANA': 'ana.co.jp',
+  };
+
+  let domain = airlineMap[airlineName];
+  if (!domain) {
+    const airlineKey = Object.keys(airlineMap).find(key =>
+      airlineName.toLowerCase().includes(key.toLowerCase())
+    );
+    domain = airlineKey ? airlineMap[airlineKey] : `${airlineName.toLowerCase().replace(/\s+/g, '')}.com`;
+  }
+  return domain;
+};
+
+const getAirlineInitials = (airlineName: string): string => {
+  return airlineName.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2);
+};
+
 interface FlightCardProps {
   flight: Flight & { duffelOfferId?: string };
   onSelect: (flight: Flight) => void;
@@ -64,8 +101,24 @@ export const FlightCard: React.FC<FlightCardProps> = ({
 
         {/* Airline Info */}
         <div className="flex items-center gap-4 w-full md:w-1/4">
-          <div className="h-10 w-10 rounded-full bg-sky-50 group-hover:bg-sky-100 transition-colors flex items-center justify-center text-sky-600">
-            <Plane size={20} />
+          <div className="h-12 w-12 rounded-lg bg-white border border-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+            <img
+              src={`https://logo.clearbit.com/${getAirlineDomain(flight.airline)}`}
+              alt={flight.airline}
+              className="h-full w-full object-contain p-1"
+              onError={(e) => {
+                // Fallback to initials if logo fails to load
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const parent = target.parentElement;
+                if (parent && !parent.querySelector('.airline-initials')) {
+                  const initials = document.createElement('div');
+                  initials.className = 'airline-initials text-sm font-bold text-sky-600';
+                  initials.textContent = getAirlineInitials(flight.airline);
+                  parent.appendChild(initials);
+                }
+              }}
+            />
           </div>
           <div>
             <h3 className="font-semibold text-slate-900">{flight.airline}</h3>
